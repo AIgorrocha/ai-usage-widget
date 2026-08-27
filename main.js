@@ -1,6 +1,7 @@
 'use strict'
 
 const path = require('node:path')
+const os = require('node:os')
 const fs = require('node:fs')
 const {
   app, BrowserWindow, Tray, Menu, ipcMain, screen,
@@ -417,6 +418,7 @@ async function refreshGrok () {
   try {
     const raw = await fetchGrokUsage(creds.token, creds.userId)
     grokRuntime.raw = raw
+    grokRuntime.plan = (raw && typeof raw.subscriptionTier === 'string' ? raw.subscriptionTier : grokTierFromLog()) || grokRuntime.plan
     grokRuntime.at = Date.now()
     grokRuntime.vm = toGrokViewModel(raw, grokRuntime.at)
     grokRuntime.status = 'ok'
@@ -444,6 +446,24 @@ function failGrok (status, message) {
   scheduleGrok()
 }
 
+// O billing nao traz o plano; o Grok CLI grava o subscriptionTier no log local.
+// Le so o fim do arquivo e devolve o ultimo rotulo visto ("Heavy", "Plus"...).
+function grokTierFromLog () {
+  try {
+    const f = path.join(os.homedir(), '.grok', 'logs', 'unified.jsonl')
+    const size = fs.statSync(f).size
+    const len = Math.min(size, 512 * 1024)
+    const buf = Buffer.alloc(len)
+    const fd = fs.openSync(f, 'r')
+    fs.readSync(fd, buf, 0, len, size - len)
+    fs.closeSync(fd)
+    const all = [...buf.toString('utf8').matchAll(/"subscriptionTier":"([^"]+)"/g)]
+    return all.length ? all[all.length - 1][1].replace(/^SuperGrok\s*/i, '').toLowerCase() : null
+  } catch {
+    return null
+  }
+}
+
 function scheduleGrok () {
   clearTimeout(grokPollTimer)
   if (!grokRuntime.available) return
@@ -451,11 +471,20 @@ function scheduleGrok () {
   grokPollTimer = setTimeout(refreshGrok, grokRuntime.backoff)
 }
 
+// Vista "Todos": um resumo por fonte disponivel, so o que a tela combinada precisa.
+function allSources () {
+  const list = [['claude', runtime], ['codex', codexRuntime], ['grok', grokRuntime], ['kimi', kimiRuntime]]
+  return list.filter(([k, r]) => k === 'claude' || r.available).map(([k, r]) => ({
+    key: k, label: SOURCE_LABEL[k], plan: r.plan, vm: r.vm, status: r.status, stale: r.stale, age: r.at ? Date.now() - r.at : null
+  }))
+}
+
 function push () {
   if (win && !win.isDestroyed()) {
     const r = activeRuntime()
     win.webContents.send('state', {
       source: state.source,
+      all: state.source === 'todos' ? allSources() : null,
       codexAvailable: codexRuntime.available,
       kimiAvailable: kimiRuntime.available,
       grokAvailable: grokRuntime.available,
@@ -530,9 +559,13 @@ function trayIcon (severity) {
   return img.isEmpty() ? nativeImage.createEmpty() : img
 }
 
-const SOURCE_LABEL = { claude: 'Claude', codex: 'Codex', kimi: 'Kimi', grok: 'Grok' }
+const SOURCE_LABEL = { todos: 'Todos', claude: 'Claude', codex: 'Codex', kimi: 'Kimi', grok: 'Grok' }
 
 function trayTooltip () {
+  if (state.source === 'todos') {
+    const parts = allSources().filter(x => x.vm && x.vm.windows[0]).map(x => `${x.label} ${x.vm.windows[0].pct}%`)
+    return parts.length ? 'Semana · ' + parts.join(' · ') : 'Consumo IA'
+  }
   const r = activeRuntime()
   const label = SOURCE_LABEL[state.source] || SOURCE_LABEL.claude
   if (!r.vm || (!r.vm.session && !r.vm.windows.length)) return `Consumo ${label}`
@@ -695,8 +728,8 @@ function createWindow () {
 
 // ---------------------------------------------------------------- ipc
 
-const SOURCE_RUNTIME = { claude: () => runtime, codex: () => codexRuntime, kimi: () => kimiRuntime, grok: () => grokRuntime }
-const SOURCE_REFRESH = { claude: () => refresh(), codex: () => refreshCodex(), kimi: () => refreshKimi(), grok: () => refreshGrok() }
+const SOURCE_RUNTIME = { todos: () => runtime, claude: () => runtime, codex: () => codexRuntime, kimi: () => kimiRuntime, grok: () => grokRuntime }
+const SOURCE_REFRESH = { todos: () => { refresh(); if (codexRuntime.available) refreshCodex(); if (kimiRuntime.available) refreshKimi(); if (grokRuntime.available) refreshGrok() }, claude: () => refresh(), codex: () => refreshCodex(), kimi: () => refreshKimi(), grok: () => refreshGrok() }
 
 ipcMain.on('refresh', () => {
   const r = SOURCE_RUNTIME[state.source]()
@@ -707,7 +740,7 @@ ipcMain.on('hide', () => { if (win) { win.hide(); updateTray() } })
 
 ipcMain.on('set-source', (_e, source) => {
   if (!SOURCE_RUNTIME[source]) return
-  if (source !== 'claude' && !SOURCE_RUNTIME[source]().available) return
+  if (source !== 'claude' && source !== 'todos' && !SOURCE_RUNTIME[source]().available) return
   if (source === state.source) return
   state = { ...state, source }
   windowState.save(app, state)
@@ -767,7 +800,7 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(() => {
     app.setAppUserModelId('dev.giovanijunior.claude-widget')
 
-    state = windowState.load(app)
+    state = { ...windowState.load(app), source: 'todos', tokensOpen: false }
     loadCache()
     loadCodexCache()
     loadKimiCache()

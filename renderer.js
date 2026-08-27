@@ -46,6 +46,64 @@ function renderRows (windows) {
   windows.forEach((w, i) => setRow(box.children[i], w))
 }
 
+// Vista "Todos": um cabecalho por fonte e uma linha por janela semanal.
+// Reconstroi o DOM so quando algo muda, senao a barra reanima a cada segundo.
+// Ritmo = % usado / % da semana decorrida. Abaixo de 0.45 sobra (candidato a
+// descer o plano); acima de 1.15 estoura antes do reset. Limiares locais, nao da API.
+function pace (w) {
+  if (!w.startsAt || !w.resetsAt || w.pct == null) return null
+  const el = Math.min(1, Math.max(0.02, (Date.now() - w.startsAt) / (w.resetsAt - w.startsAt)))
+  const ratio = w.pct / (el * 100)
+  const cls = ratio > 1.15 ? 'bad' : ratio < 0.45 ? 'low' : 'ok'
+  return { elapsed: el * 100, ratio, cls, label: cls === 'bad' ? 'estoura' : cls === 'low' ? 'sobra' : 'no ritmo' }
+}
+
+let allKey = ''
+function renderAll (all) {
+  const hour = Math.floor(Date.now() / 3600000) // move o marcador uma vez por hora, sem reanimar a barra
+  const key = JSON.stringify([hour, all.map(s => [s.key, s.plan, s.status, s.vm && s.vm.windows, s.vm && s.vm.session && s.vm.session.pct])])
+  if (key === allKey) return
+  allKey = key
+  const box = $('rows')
+  box.innerHTML = ''
+  for (const src of all) {
+    const grp = document.createElement('div')
+    grp.className = 'grp'
+    grp.innerHTML = '<span class="gname"></span><span class="gplan"></span><span class="gsess"></span>'
+    grp.querySelector('.gname').textContent = src.label
+    grp.querySelector('.gplan').textContent = src.plan || ''
+    const sess = src.vm && src.vm.session
+    const gs = grp.querySelector('.gsess')
+    if (sess) { gs.textContent = `5 h ${sess.pct}% · ${sess.countdown || ''}`; gs.classList.add(sess.severity || 'ok') }
+    box.appendChild(grp)
+    const windows = (src.vm && src.vm.windows) || []
+    if (!windows.length) {
+      const row = makeRow()
+      row.classList.add('empty')
+      setRow(row, { name: src.status === 'ok' ? 'sem janela semanal' : (STATUS[src.status] || STATUS.ok).text, pct: null })
+      box.appendChild(row)
+      continue
+    }
+    for (const w of windows) {
+      const row = makeRow()
+      setRow(row, { ...w, when: w.when ? `reinicia ${w.when}` : '' })
+      const p = pace(w)
+      if (p) {
+        const mk = document.createElement('b')
+        mk.className = 'mk'
+        mk.style.left = p.elapsed.toFixed(1) + '%'
+        row.querySelector('.bar').appendChild(mk)
+        const v = document.createElement('span')
+        v.className = 'verd ' + p.cls
+        v.textContent = p.label
+        v.title = `${w.pct}% usado com ${p.elapsed.toFixed(0)}% da semana passada (ritmo ${p.ratio.toFixed(2)}x)`
+        row.querySelector('.top').insertBefore(v, row.querySelector('.val'))
+      }
+      box.appendChild(row)
+    }
+  }
+}
+
 function renderSession (session) {
   const arc = $('arc')
   if (!session) {
@@ -188,17 +246,28 @@ function render (state) {
   $('plan').textContent = state.plan || '—'
   renderSourceTabs(state.source, { codex: state.codexAvailable, kimi: state.kimiAvailable, grok: state.grokAvailable })
   // No compacto os tabs somem (nao cabem); o nome da fonte migra pra aqui do lado do plano.
-  $('who-source').textContent = state.source + ' · '
+  $('who-source').textContent = (state.source === 'todos' ? 'semana' : state.source) + ' · '
 
   // A aba de tokens le o disco do Claude Code: nao existe equivalente pro Codex/Kimi ainda.
   const claudeSource = state.source === 'claude'
   $('chev').hidden = !claudeSource
 
+  const todos = state.source === 'todos'
+  document.body.classList.toggle('todos', todos)
+
   const vm = state.vm
-  renderSession(vm && vm.session)
-  renderRows((vm && vm.windows) || [])
-  renderSpend(vm && vm.spend)
-  renderBanner(state.status, state.message)
+  $('legend').hidden = !todos || !!state.compact
+  if (todos) {
+    renderAll(state.all || [])
+    renderBanner('ok', null)
+  } else {
+    // Saindo da vista "Todos": os cabecalhos por fonte nao sao .row, limpa antes de reaproveitar.
+    if (allKey) { $('rows').innerHTML = ''; allKey = '' }
+    renderSession(vm && vm.session)
+    renderRows((vm && vm.windows) || [])
+    renderSpend(vm && vm.spend)
+    renderBanner(state.status, state.message)
+  }
 
   $('meta-label').textContent = state.stale ? 'último valor' : 'reinicia em'
 

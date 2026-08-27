@@ -1,6 +1,6 @@
 {
   "name": "claude-widget",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "private": true,
   "description": "Widget de desktop que mostra o consumo de Claude Code, Codex, Kimi Code e Grok Build",
   "author": "Giovani Junior",
