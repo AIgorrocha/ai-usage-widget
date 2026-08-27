@@ -24,6 +24,7 @@ const { toGrokViewModel } = require('./lib/grok-view-model')
 const windowState = require('./lib/window-state')
 const autostart = require('./lib/autostart')
 const tokenUsage = require('./lib/token-usage')
+const history = require('./lib/history')
 const { nextBackoff, BASE_MS: POLL_BASE_MS } = require('./lib/poll-policy')
 
 // A aba de tokens le arquivos do disco, nao a API: ritmo proprio, e so quando aberta.
@@ -479,12 +480,23 @@ function allSources () {
   }))
 }
 
+let hist = null
+function historyFile () { return cacheFile('history.json') }
+// Registra a semana corrente de cada janela e fecha a anterior quando o reset muda.
+function trackHistory (sources) {
+  if (!hist) hist = history.load(historyFile())
+  if (history.record(hist, sources)) history.save(historyFile(), hist)
+  return history.recommend(hist, sources)
+}
+
 function push () {
   if (win && !win.isDestroyed()) {
     const r = activeRuntime()
+    const sources = state.source === 'todos' ? allSources() : null
     win.webContents.send('state', {
       source: state.source,
-      all: state.source === 'todos' ? allSources() : null,
+      all: sources,
+      reco: sources ? trackHistory(sources) : null,
       codexAvailable: codexRuntime.available,
       kimiAvailable: kimiRuntime.available,
       grokAvailable: grokRuntime.available,
@@ -612,7 +624,7 @@ function setAutostart (on) {
   try {
     // __dirname, nao app.getAppPath(): este e sempre a pasta do main, independente
     // de como o Electron foi invocado.
-    autostart.set(shell, on, process.execPath, __dirname)
+    autostart.set(shell, on, process.execPath, app.isPackaged ? null : __dirname)
   } catch (err) {
     console.error('autostart:', err.message)
   }

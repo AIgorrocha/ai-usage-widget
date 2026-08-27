@@ -61,6 +61,14 @@
   .row .verd.ok{color:var(--ok);background:rgba(79,163,124,.14)}
   .row .verd.bad{color:var(--crit);background:rgba(207,78,66,.14)}
   .legend{font-size:10.5px;color:var(--faint);padding:0 18px 12px;line-height:1.4}
+  .reco{margin:2px 18px 12px;padding:10px 12px;border-radius:9px;background:var(--panel-hi);border:1px solid var(--line);display:flex;flex-direction:column;gap:6px}
+  .reco .label{margin-bottom:2px}
+  .rrow{display:flex;gap:8px;align-items:baseline;font-size:12px;line-height:1.35}
+  .rrow .rname{font-family:var(--mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;flex:none;width:52px}
+  .rrow .rdot{width:7px;height:7px;border-radius:99px;flex:none;align-self:center}
+  .rrow.low .rdot{background:var(--copper)}.rrow.ok .rdot{background:var(--ok)}.rrow.bad .rdot{background:var(--crit)}.rrow.wait .rdot{background:var(--faint)}
+  .rrow.low .rname{color:var(--copper)}.rrow.ok .rname{color:var(--ok)}.rrow.bad .rname{color:var(--crit)}.rrow.wait .rname{color:var(--faint)}
+  body.compact .reco{display:none}
   body.todos.compact .rows{display:flex;padding:0 16px 12px;gap:8px}
   body.todos.compact .grp,body.todos.compact .row .when{display:none}
   .who{font-family:var(--mono);font-size:10.5px;letter-spacing:.13em;text-transform:uppercase;color:var(--muted);margin-right:auto;white-space:nowrap}
@@ -236,6 +244,10 @@
   </div>
 
   <div class="rows" id="rows"></div>
+  <div class="reco" id="reco" hidden>
+    <div class="label">recomendação</div>
+    <div id="reco-list"></div>
+  </div>
   <div class="legend" id="legend" hidden>Traço = quanto da semana já passou. SOBRA = pode descer o plano; ESTOURA = vai faltar antes de reiniciar. Decida com 3 a 4 semanas iguais.</div>
 
   <div class="spend off" id="spend">

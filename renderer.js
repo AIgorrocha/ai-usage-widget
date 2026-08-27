@@ -58,6 +58,26 @@ function pace (w) {
   return { elapsed: el * 100, ratio, cls, label: cls === 'bad' ? 'estoura' : cls === 'low' ? 'sobra' : 'no ritmo' }
 }
 
+let recoKey = ''
+function renderReco (reco) {
+  const box = $('reco')
+  if (!reco || !reco.length) { box.hidden = true; recoKey = ''; return }
+  box.hidden = false
+  const key = JSON.stringify(reco)
+  if (key === recoKey) return
+  recoKey = key
+  const list = $('reco-list')
+  list.innerHTML = ''
+  for (const r of reco) {
+    const row = document.createElement('div')
+    row.className = 'rrow ' + r.level
+    row.innerHTML = '<span class="rdot"></span><span class="rname"></span><span class="rtext"></span>'
+    row.querySelector('.rname').textContent = r.label
+    row.querySelector('.rtext').textContent = r.text
+    list.appendChild(row)
+  }
+}
+
 let allKey = ''
 function renderAll (all) {
   const hour = Math.floor(Date.now() / 3600000) // move o marcador uma vez por hora, sem reanimar a barra
@@ -257,6 +277,7 @@ function render (state) {
 
   const vm = state.vm
   $('legend').hidden = !todos || !!state.compact
+  renderReco(todos && !state.compact ? state.reco : null)
   if (todos) {
     renderAll(state.all || [])
     renderBanner('ok', null)
