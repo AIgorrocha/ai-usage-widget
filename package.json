@@ -1,9 +1,9 @@
 {
-  "name": "claude-widget",
-  "version": "1.1.1",
+  "name": "ai-usage",
+  "version": "1.0.0",
   "private": true,
-  "description": "Widget de desktop que mostra o consumo de Claude Code, Codex, Kimi Code e Grok Build",
-  "author": "Giovani Junior",
+  "description": "Widget flutuante para Windows: consumo semanal de Claude Code, Codex, Grok Build e Kimi na mesma tela, com aviso de sobra ou estouro do plano",
+  "author": "Igor Rocha",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
@@ -14,40 +14,36 @@
     "autostart:off": "electron tools/autostart-cli.js --off",
     "autostart:status": "electron tools/autostart-cli.js --status",
     "empacotar": "node tools/pack.js",
-    "dist": "electron-builder --win",
-    "release": "electron-builder --win --publish always"
+    "dist": "electron-builder --win"
   },
   "devDependencies": {
     "electron": "43.2.0",
     "electron-builder": "^26.15.3"
   },
   "build": {
-    "appId": "dev.giovanijunior.claude-widget",
-    "productName": "Claude Widget",
+    "appId": "br.com.igorrocha.ai-usage",
+    "productName": "AI Usage",
     "files": [
       "main.js",
       "preload.js",
       "index.html",
       "renderer.js",
       "lib/**/*",
-      "assets/**/*"
+      "assets/**/*",
+      "LICENSE"
     ],
     "directories": {
       "output": "release"
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "differentialPackage": false
-    },
-    "publish": {
-      "provider": "github",
-      "owner": "giovani-junior-dev",
-      "repo": "claude-widget",
-      "releaseType": "release"
+      "differentialPackage": false,
+      "artifactName": "AI-Usage-Setup-${version}.${ext}"
     }
   }
 }

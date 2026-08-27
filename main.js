@@ -34,7 +34,7 @@ const WIDTH_COMPACT = 230
 
 // Aparencia fixa nos tons creme do mockup. Para voltar a acompanhar o Windows,
 // troque por: () => nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
-const theme = () => 'light'
+const theme = () => 'dark'
 
 let win = null
 let tray = null
@@ -564,7 +564,7 @@ const SOURCE_LABEL = { todos: 'Todos', claude: 'Claude', codex: 'Codex', kimi: '
 function trayTooltip () {
   if (state.source === 'todos') {
     const parts = allSources().filter(x => x.vm && x.vm.windows[0]).map(x => `${x.label} ${x.vm.windows[0].pct}%`)
-    return parts.length ? 'Semana · ' + parts.join(' · ') : 'Consumo IA'
+    return parts.length ? 'AI Usage · ' + parts.join(' · ') : 'AI Usage'
   }
   const r = activeRuntime()
   const label = SOURCE_LABEL[state.source] || SOURCE_LABEL.claude
@@ -690,7 +690,7 @@ function createWindow () {
     alwaysOnTop: state.pinned,
     skipTaskbar: true,
     show: false,
-    backgroundColor: theme() === 'dark' ? '#1B1815' : '#FAF6EF',
+    backgroundColor: theme() === 'dark' ? '#12151B' : '#F6F7FA',
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -800,7 +800,10 @@ if (!app.requestSingleInstanceLock()) {
   app.whenReady().then(() => {
     app.setAppUserModelId('dev.giovanijunior.claude-widget')
 
+    const firstRun = !fs.existsSync(path.join(app.getPath('userData'), 'window-state.json'))
     state = { ...windowState.load(app), source: 'todos', tokensOpen: false }
+    // Zero configuracao: no primeiro uso ja entra com o Windows. Desliga pelo menu da bandeja.
+    if (firstRun && app.isPackaged) setAutostart(true)
     loadCache()
     loadCodexCache()
     loadKimiCache()

@@ -243,7 +243,7 @@ function render (state) {
   document.body.classList.toggle('compact', !!state.compact)
   document.body.classList.toggle('stale', !!state.stale)
   $('pin').setAttribute('aria-pressed', String(!!state.pinned))
-  $('plan').textContent = state.plan || '—'
+  $('plan').textContent = state.source === 'todos' ? 'AI Usage' : (state.plan || '—')
   renderSourceTabs(state.source, { codex: state.codexAvailable, kimi: state.kimiAvailable, grok: state.grokAvailable })
   // No compacto os tabs somem (nao cabem); o nome da fonte migra pra aqui do lado do plano.
   $('who-source').textContent = (state.source === 'todos' ? 'semana' : state.source) + ' · '

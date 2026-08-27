@@ -3,26 +3,24 @@
 <head>
 <meta charset="UTF-8">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; script-src 'self'">
-<title>Consumo IA</title>
+<title>AI Usage</title>
 <style>
   :root{
-    --panel:#1B1815; --panel-hi:#241F1B; --well:#100E0C; --foot:#100E0C;
-    --line:rgba(255,240,225,.09); --line-hard:rgba(255,240,225,.16);
-    --text:#EDE6DE; --muted:#9A8F84; --faint:#6E655C;
-    --copper:#C6703C; --copper-dim:rgba(198,112,60,.22);
-    --ok:#4FA37C; --warn:#D6A03D; --crit:#CF4E42;
-    --display:"Bahnschrift","DIN Alternate","Segoe UI Semibold",system-ui,sans-serif;
+    --panel:#12151B; --panel-hi:#181C24; --well:#232833; --foot:#0E1116;
+    --line:rgba(255,255,255,.07); --line-hard:rgba(255,255,255,.14);
+    --text:#E8ECF2; --muted:#98A2B3; --faint:#6B7587;
+    --copper:#4C8DFF; --copper-dim:rgba(76,141,255,.18);
+    --ok:#2FBF71; --warn:#F5A524; --crit:#F04E4E;
+    --display:"Segoe UI Variable Display","Segoe UI Semibold","Segoe UI",system-ui,sans-serif;
     --body:"Segoe UI Variable Text","Segoe UI",system-ui,sans-serif;
     --mono:"Cascadia Mono","Consolas",ui-monospace,monospace;
   }
-  /* tons do mockup: creme quente, barra de topo mais clara que o corpo,
-     calhas em bege. Verde escuro nos medidores, cobre so nos creditos. */
   :root[data-theme="light"]{
-    --panel:#FAF6EF; --panel-hi:#FEFCF8; --well:#EBE4D8; --foot:#F4EEE3;
-    --line:rgba(58,44,30,.12); --line-hard:rgba(58,44,30,.20);
-    --text:#2A231C; --muted:#6B6055; --faint:#9A8D7E;
-    --copper:#B4622C; --copper-dim:rgba(180,98,44,.16);
-    --ok:#2E7D5B; --warn:#9A6F16; --crit:#AF3A30;
+    --panel:#F6F7FA; --panel-hi:#FFFFFF; --well:#E3E7EE; --foot:#EEF1F6;
+    --line:rgba(20,30,50,.10); --line-hard:rgba(20,30,50,.18);
+    --text:#1B2130; --muted:#5B667A; --faint:#8A94A6;
+    --copper:#2F6FE4; --copper-dim:rgba(47,111,228,.14);
+    --ok:#1F9D5A; --warn:#B7791F; --crit:#D33C3C;
   }
 
   *{box-sizing:border-box}
@@ -57,9 +55,9 @@
   .grp .gsess.warn{color:var(--warn)}.grp .gsess.crit{color:var(--crit)}
   .row.empty .name{color:var(--faint);font-weight:400;font-size:12px}
   /* marcador: quanto da semana ja passou. Barra atras dele = sobra; na frente = vai faltar */
-  .bar .mk{position:absolute;top:-1px;bottom:-1px;width:2px;background:var(--text);opacity:.85;transform:translateX(-1px)}
+  .bar .mk{position:absolute;top:-1px;bottom:-1px;width:2px;background:var(--text);opacity:.9;transform:translateX(-1px);box-shadow:0 0 0 1px var(--panel)}
   .row .verd{font-family:var(--mono);font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:1px 5px;border-radius:4px;flex:none}
-  .row .verd.low{color:#3F7FC2;background:rgba(63,127,194,.14)}
+  .row .verd.low{color:var(--copper);background:var(--copper-dim)}
   .row .verd.ok{color:var(--ok);background:rgba(79,163,124,.14)}
   .row .verd.bad{color:var(--crit);background:rgba(207,78,66,.14)}
   .legend{font-size:10.5px;color:var(--faint);padding:0 18px 12px;line-height:1.4}
@@ -105,7 +103,7 @@
   .row .name{font-size:13px;font-weight:600}
   .row .when{font-family:var(--mono);font-size:10px;color:var(--faint);letter-spacing:.04em}
   .row .val{margin-left:auto;font-family:var(--display);font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
-  .bar{position:relative;height:8px;border-radius:99px;background:var(--well);overflow:hidden}
+  .bar{position:relative;height:9px;border-radius:99px;background:var(--well);overflow:hidden}
   /* escala em vez de largura: nao toca layout. O recorte arredondado vem do .bar */
   .bar i{position:absolute;inset:0;display:block;transform-origin:left center;transform:scaleX(0);transition:transform .5s cubic-bezier(.2,.7,.2,1)}
   .bar::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0 calc(10% - 1px),var(--line-hard) calc(10% - 1px) 10%)}
@@ -201,7 +199,7 @@
         <svg class="src-icon" viewBox="0 0 1024 1024" aria-hidden="true"><path fill="currentColor" d="M395.479 633.828L735.91 381.105C752.599 368.715 776.454 373.548 784.406 392.792C826.26 494.285 807.561 616.253 724.288 699.996C641.016 783.739 525.151 802.104 419.247 760.277L303.556 814.143C469.49 928.202 670.987 899.995 796.901 773.282C896.776 672.843 927.708 535.937 898.785 412.476L899.047 412.739C857.105 231.37 909.358 158.874 1016.4 10.6326C1018.93 7.11771 1021.47 3.60279 1024 0L883.144 141.651V141.212L395.392 633.916"/><path fill="currentColor" d="M325.226 695.251C206.128 580.84 226.662 403.776 328.285 301.668C403.431 226.097 526.549 195.254 634.026 240.596L749.454 186.994C728.657 171.88 702.007 155.623 671.424 144.2C533.19 86.9942 367.693 115.465 255.323 228.382C147.234 337.081 113.244 504.215 171.613 646.833C215.216 753.423 143.739 828.818 71.7385 904.916C46.2237 931.893 20.6216 958.87 0 987.429L325.139 695.339"/></svg>
       </button>
     </div>
-    <span class="who"><span class="who-source" id="who-source"></span><b id="plan">—</b></span>
+    <span class="who"><span class="who-source" id="who-source"></span><b id="plan">AI Usage</b></span>
     <button class="ctl" id="pin" aria-pressed="true" title="Fixar sobre outras janelas">▲</button>
     <button class="ctl" id="refresh" title="Atualizar agora">↻</button>
     <button class="ctl" id="compact" title="Modo compacto">▢</button>
